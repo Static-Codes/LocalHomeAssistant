@@ -1,142 +1,54 @@
 @startuml "LocalHomeAssistant"
-!theme toy
-!option handwritten false
-skinparam shadowing false
+!theme mars
+skinparam shadowing true
+skinparam ForeColor black
 
-package "LocalHomeAssistant" {
+package "<font color=blue>LocalHomeAssistant" {
 
-    class Server {
-        + Start()
-        + Restart()
-        + Terminate()
-        + Status()
+    class HomeAssistantServer 
+    {
+        + Status : ServerStatus = ServerStatus.Inactive;
+        + AvailableFeatures = List<Feature> = [];
+        
+        public function Start(string[] args) : void 
+        public function Restart() : bool
+        public function Terminate() : void
+        public function SetStatus(ServerStatus status) { ServerStatus = status; }
         
     }
-        
-
-    class DocumentManager {
-        - documents: Dictionary<Uri, TextDocument>
-        + GetDocument(uri: Uri): TextDocument
-        + UpdateDocument(uri: Uri, content: string)
-        + AddDocument(uri: Uri, content: string)
-        + RemoveDocument(uri: Uri)
+    
+    enum ServerStatus {
+        Inactive = 0,
+        Running = 1,
+        Restarting = 2,
+        Terminated = 3,
     }
-
-    class TextDocument {
-        - uri: Uri
-        - content: string
-        - version: int
-        + GetContent(): string
-        + GetLines(): string[]
-        + GetVersion(): int
+    
+    enum FeatureName {
+        WeatherForecast = 0,
+        WebSearch = 1,
+        StockPrices = 2,
     }
-
-    class Tokenizer {
-        + Tokenize(sourceCode: string): List<Token>
-        - patterns: List<Regex>
-        - tokenTypes: Dictionary<string, TokenType>
+    
+    enum FeatureStatus {
+        Available = 0,
+        CurrentlyBroken = 1,
+        Finished = 2,
+        InProgress = 3,
+        TemporarilyUnavailable = 4,
     }
-
-    class Token {
-        + Type: TokenType
-        + Value: string
-        + StartPosition: int
-        + Length: int
-        + Line: int
-        + Column: int
+    
+    
+    class Feature {
+        + public required Name : FeatureName { get; set; }
+        + public Status: FeatureStatus = FeatureStatus.Available
+        - public function SetStatus(FeatureStatus status) { Status = status }
     }
-
-    enum TokenType {
-        KEYWORD
-        IDENTIFIER
-        OPERATOR
-        STRING_LITERAL
-        NUMBER_LITERAL
-        COMMENT
-        WHITESPACE
-    }
-
-    class Parser {
-        + Parse(tokens: List<Token>): AbstractSyntaxTree
-        - currentTokenIndex: int
-        - tokens: List<Token>
-        + Consume(expectedType: TokenType): Token
-        - ParseStatement(): Node
-        - ParseExpression(): Node
-    }
-
-    class AbstractSyntaxTree {
-        + Root: Node
-    }
-
-    abstract class Node {
-        + Range: Range
-    }
-
-    class Diagnostic {
-        + Range: Range
-        + Message: string
-        + Severity: DiagnosticSeverity
-    }
-
-    class Analyser {
-        + Analyse(ast: AbstractSyntaxTree): List<Diagnostic>
-        - symbolTable: SymbolTable
-    }
-
-    class SymbolTable {
-        + AddSymbol(name: string, type: SymbolType, location: Location)
-        + ResolveSymbol(name: string): Symbol
-    }
-
-    LanguageServer --> DocumentManager : uses
-    LanguageServer --> Parser : uses
-    LanguageServer --> Analyser : uses
-    DocumentManager --> TextDocument : manages
-    Parser --> Tokenizer : uses
-    Parser --> AbstractSyntaxTree : creates
-    Analyser --> AbstractSyntaxTree : analyses
-    Analyser --> SymbolTable : uses
-    Tokenizer ..> Token : creates
-    Token ..> TokenType : has
-
-    note "Will query a json file which contains the feature name and a boolean regarding its status." as ServerStatusNote
-    Server.Status .. ServerStatusNote
-
-    note "Builds a structured representation of the code." as N2
-    Parser .. N2
-
-    note "Checks for semantic errors and builds symbol table." as N3
-    Analyser .. N3
+    
+    HomeAssistantServer ---> Start : "<font color=red>Starts the listener associated with the HomeAssistantServer object."
+    HomeAssistantServer ---> Restart : "<font color=red>Restarts the listener associated with the HomeAsssistantServer object."
+    HomeAssistantServer ---> Terminate : "<font color=red>Terminates the listener associated with the HomeAssistantServer object."
+    HomeAssistantServer ---> Status : "<font color=red>Queries a json file which contains the feature name and a boolean regarding its status."
+    
 }
-
-package "LSP Types (External)" {
-    class InitializeParams
-    class DidChangeTextDocumentParams
-    class CompletionParams
-    class CompletionList
-    class HoverParams
-    class Hover
-    class DefinitionParams
-    class Location
-    class SemanticTokensParams
-    class SemanticTokens
-    class DiagnosticSeverity
-    class Range
-    class Uri
-}
-
-LanguageServer ..> InitializeParams
-LanguageServer ..> DidChangeTextDocumentParams
-LanguageServer ..> CompletionParams
-LanguageServer ..> CompletionList
-LanguageServer ..> HoverParams
-LanguageServer ..> Hover
-LanguageServer ..> DefinitionParams
-LanguageServer ..> Location
-LanguageServer ..> SemanticTokensParams
-LanguageServer ..> SemanticTokens
-Diagnostic ..> DiagnosticSeverity
-Node ..> Range
-TextDocument ..> Uri
 @enduml
